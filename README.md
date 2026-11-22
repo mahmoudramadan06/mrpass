@@ -3,145 +3,149 @@
 ```text
     ____ ___  _________  ____  ____ _____
    / __ `__ \/ ___/ __ \/ __ \/ ___/ ___/
-  / / / / / / /  / /_/ / /_/ (__  |__  ) 
- /_/ /_/ /_/_/  / .___/\__,_/____/____/  
-               /_/                       
+  / / / / / / /  / /_/ / /_/ (__  |__  )
+ /_/ /_/ /_/_/  / .___/\__,_/____/____/
+               /_/
 ```
 
-### 🚀 Advanced OSINT & Security Analysis Tool v3.2.1
+### Advanced OSINT & Security Analysis CLI — v4.0.0
 
-**A high-performance CLI security analysis tool engineered for Penetration Testers and Security Analysts.**
+**Password strength auditing, breach intelligence, phone/email OSINT, hash identification and authorized-audit wordlist generation. Free and open source (MIT).**
 
 </div>
 
 ---
 
-## 📌 About `mrpass`
+## What's new in v4.0.0
 
-`mrpass` is an advanced, standalone command-line interface tool designed to streamline security assessments, credential auditing, and target intelligence gathering. Built with a heavy focus on speed, clean terminal formatting, and system-wide integration.
+- **Pattern-aware strength analysis:** detects repeated characters/chunks, sequences (`abcd`, `4321`), keyboard walks (`qwerty`, `1qaz`), embedded years, and leetspeak-normalized dictionary passwords (`P@ssw0rd` is caught), with three realistic crack-time scenarios instead of one naive estimate.
+- **Privacy-first password handling:** passwords are masked in every display, JSON result and CSV export, no password-derived hash is ever stored (an unsalted digest would be offline verification material), and input can be piped via stdin or typed into a hidden prompt instead of appearing in shell history.
+- **Passphrase generator:** memorable passphrases from the embedded 1296-word EFF short list, plus CSPRNG passwords with `--no-symbols` and fixed handling of short lengths (v3 hung forever on `-n 3`).
+- **25-format hash identifier:** bcrypt, Argon2, md5crypt/sha256crypt/sha512crypt, phpass, Drupal, Django PBKDF2, LDAP schemes, Kerberos, MySQL, JWT and more, with hashcat `-m` and John `--format` hints.
+- **Smarter email OSINT:** syntax validation (local), MX lookup over DNS-over-HTTPS, disposable detection (local list + debounce.io), XposedOrNot breach check with fixed response parsing.
+- **Richer phone analysis:** line type (mobile/VoIP/fixed), E.164/international/national formats, possible-vs-valid distinction, carrier, country and timezones.
+- **Rebuilt wordlist mutator:** multiple base words, year ranges (`--years 2018-2026`), three intensity levels, leetspeak toggle, length bounds, deterministic deduped output.
+- **Scriptable:** `--json` machine-readable output, real exit codes (0 ok, 1 usage, 2 bad arguments), `--no-color`/`NO_COLOR` support, masked CSV export.
+- **Quality:** 71-test suite (66 offline + 5 opt-in live API checks via `python -m unittest discover -s tests`), MIT LICENSE file, proper packaging (`pip install .` / `pipx`), root-free installer.
 
----
-
-## ⚙️ Key Features
-
-- **Advanced Password Entropy & Strength Analyzer:** Evaluates character complexity, calculates entropy bits, and estimates brute-force crack time.
-- **OSINT Breach Intelligence:** Integrated with HaveIBeenPwned (HIBP) API and XposedOrNot (XON) for instant credential leak detection.
-- **Phone Number OSINT Analysis:** Identifies carrier, country, timezone, and auto-generates custom Google Dorks for deep digital footprinting.
-- **Email Intelligence:** Checks for corporate/personal breaches and detects disposable (burner) email providers.
-- **Hash Type Identifier:** Automatically recognizes MD5, SHA families, NTLM, and Unix crypt hashes.
-- **Pentest Wordlist Mutator:** Generates high-probability brute-force mutations (leet-speak variations, standard suffixes, and current-year patterns) from a base target word.
-- **System-Wide Installation:** Installs globally via a single setup script so you can run it instantly from anywhere like standard security tools (`nmap`, `john`).
-- **Professional Reporting:** Supports bulk file scanning and clean CSV export formatting.
-
----
-
-## 📥 Installation & Setup
-
-`mrpass` comes with an automated installation script (`install.sh`) that installs all required dependencies and sets up the tool globally in your system path.
-
-### 1. Clone the Repository
+## Install
 
 ```bash
 git clone https://github.com/mahmoudramadan06/mrpass.git
 cd mrpass
+
+# Option 1: pipx (recommended)
+pipx install .
+
+# Option 2: installer script (venv in ~/.local/share, no sudo)
+./install.sh
+
+# Option 3: plain pip
+pip install .
 ```
 
-### 2. Run the Installer
+Then run `mrpass -h` from anywhere. Requires Python 3.9+.
 
-Run the installation script with root privileges to configure the dependencies and make `mrpass` available globally:
-
-```bash
-sudo chmod +x install.sh
-sudo ./install.sh
-```
-
-### 3. Run the Tool
-
-Once the installation is complete, you can run the tool from anywhere in your terminal without typing python or file extensions:
-
-```bash
-mrpass -h
-```
-
----
-
-## 🛠️ Syntax & Usage Guide
+## Usage
 
 ```text
 mrpass [TARGET] [OPTIONS]
 ```
 
-### Target Modes
+### Target modes
 
 | Flag | Description |
 |---|---|
-| `-ps`, `--password` | Analyze password strength, entropy, and crack time |
-| `-em`, `--email` | Investigate email addresses for breaches and disposable status |
-| `-ph`, `--phone` | Analyze phone numbers (Carrier, Country, OSINT Dorks) |
-| `-id`, `--identify` | Identify unknown hash types (MD5, SHA, NTLM, etc.) |
-| `-m`, `--mutate [FILE]` | Generate a custom pentest wordlist from a base target word |
-| `-n`, `--new [LENGTH]` | Generate a secure random password (default length: 16) |
+| `-ps`, `--password` | Password strength, pattern findings, crack-time scenarios |
+| `-em`, `--email` | Email syntax, breaches, disposable and MX checks |
+| `-ph`, `--phone` | Phone validation, carrier, country, line type, OSINT dorks |
+| `-id`, `--identify` | Identify hash types (25+ formats, hashcat/john hints) |
+| `-m`, `--mutate [FILE]` | Audit wordlist from base words (authorized use only) |
+| `-n`, `--new [LENGTH]` | Generate a CSPRNG password (default: 16) |
+| `-pp`, `--passphrase [N]` | Generate a passphrase (default: 5 words) |
 
-### OSINT & File Operations
+### Options
 
 | Flag | Description |
 |---|---|
-| `-sr`, `--search-leak` | Query threat intel APIs (HaveIBeenPwned, XposedOrNot, Debounce) |
-| `-f`, `--file [FILE]` | Bulk scan mode: Read multiple targets from a text file |
-| `-o`, `--output [FILE]` | Export all scan results to a formatted CSV file |
-| `-q`, `--quiet` | Stealth/Automation mode: Suppress banners and UI formatting |
-| `-h`, `--help` | Show advanced help menu |
+| `-sr`, `--search-leak` | Opt-in online lookups (see Privacy below) |
+| `-f`, `--file FILE` | Bulk mode: read targets from a text file |
+| `-o`, `--output FILE` | Export results to CSV (secrets masked) |
+| `-q`, `--quiet` | One-line output per target |
+| `--json` | Machine-readable JSON output |
+| `--no-color` | Disable ANSI colors (NO_COLOR env also works) |
+| `--no-symbols` | Generate alphanumeric-only passwords |
+| `--separator SEP` | Passphrase word separator (default `-`) |
+| `--years A-B` | Mutator year suffixes (default: current year) |
+| `--level 1-3` | Mutator intensity (default: 2) |
+| `--no-leet` | Disable leetspeak mutations |
+| `--min N`, `--max N` | Mutator length bounds |
+| `--version` | Print version |
 
----
+## Examples
 
-## 💡 Real-World Examples
-
-**1. OSINT Password Audit (with online breach check):**
 ```bash
-mrpass "Admin@123" -ps -sr
-```
+# Hidden prompt (no shell-history leak), local analysis only
+mrpass -ps
 
-**2. Email Threat Intelligence & Breach Check:**
-```bash
-mrpass "target@mail.com" -em -sr
-```
+# Same + HaveIBeenPwned breach check (k-anonymity; password never sent)
+mrpass -ps -sr
 
-**3. Phone Number OSINT & Dorking:**
-```bash
-mrpass "+201093792767" -ph
-```
+# Pipe a password from a password manager
+pass show email | mrpass -ps -sr
 
-**4. Identify Unknown Hash Type:**
-```bash
-mrpass "5d41402abc4b2a76b9719d911017c592" -id
-```
+# Email: syntax (local), then opt-in breach/disposable/MX checks
+mrpass "user@mail.com" -em -sr
 
-**5. Generate a Secure Random Password (20 chars):**
-```bash
+# Phone OSINT (fully local, no network)
+mrpass "+2010xxxxxxxx" -ph
+
+# Identify a hash
+mrpass "\$2y\$10\$N9qo8uLOickgx2ZMRZoMye..." -id
+
+# Generate
 mrpass -n 20
+mrpass -pp 6 --separator .
+
+# Audit wordlist (authorized use only)
+mrpass "company,petname" -m wordlist.txt --years 2020-2026 --level 2
+
+# Bulk scan with masked CSV export and JSON summary
+mrpass -f targets.txt -ps -sr -o report.csv --json
 ```
 
-**6. Bulk Scan from File & Export to CSV Report:**
+## Privacy
+
+Local analysis (strength, patterns, hash ID, phone metadata, email syntax, generation, wordlists) **never leaves your machine**. Online lookups run only with `-sr`:
+
+| Check | Service | What is sent |
+|---|---|---|
+| Password breach | HaveIBeenPwned range API | First 5 hex chars of the SHA-1 hash (k-anonymity). The password itself is never sent. |
+| Email breach | XposedOrNot | The email address |
+| Disposable check | debounce.io | The email address |
+| MX lookup | Cloudflare/Google DNS-over-HTTPS | The email's domain |
+
+Passwords are never printed in full and no unsalted password-derived hash is ever shown or stored: output and CSV exports carry only the masked form.
+
+## Responsible use
+
+The wordlist mutator and OSINT dorks are for **authorized security auditing of your own credentials and systems** (the same scope as tools like cupp and crunch). Don't use them against accounts, people or systems you don't own or lack permission to test.
+
+## Development
+
 ```bash
-mrpass -f targets.txt -ps -sr -o audit_report.csv
+python -m unittest discover -s tests          # offline suite
+MRPASS_NET_TESTS=1 python -m unittest discover -s tests   # includes live API checks
 ```
 
-**7. View Developer & Tool Information:**
-```bash
-mrpass info
-```
+## Author
 
----
+- **Mahmoud Ramadan Elbezzawy** — Computer Science & AI (Cybersecurity)
+- GitHub: [mahmoudramadan06](https://github.com/mahmoudramadan06)
+- LinkedIn: [mahmoud-r-elbezzawy](https://www.linkedin.com/in/mahmoud-r-elbezzawy)
 
-## 👨‍💻 Author & Developer
+## License
 
-- **Name:** Mahmoud Ramadan Elbezzawy
-- **Field:** Computer Science & Artificial Intelligence (Cybersecurity Focus)
-- **GitHub:** [github.com/mahmoudramadan06](https://github.com/mahmoudramadan06)
-- **LinkedIn:** [linkedin.com/in/mahmoud-r-elbezzawy](https://www.linkedin.com/in/mahmoud-r-elbezzawy)
+MIT — see [LICENSE](LICENSE).
 
----
-
-## 📝 License
-
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+Passphrase wordlist: [EFF short wordlist](https://www.eff.org/files/2016/09/08/eff_short_wordlist_1.txt), CC-BY 3.0.
