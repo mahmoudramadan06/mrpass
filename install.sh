@@ -1,29 +1,37 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# mrpass installer - no root required.
+# Prefers pipx; falls back to a local venv in ~/.local/share/mrpass-venv
+# with a launcher symlinked into ~/.local/bin.
+set -euo pipefail
 
-# Ensure script is run with root/sudo privileges
-if [ "$EUID" -ne 0 ]; then
-  echo "[-] Please run this installer with sudo: sudo ./install.sh"
-  exit 1
+cd "$(dirname "$0")"
+
+echo "[+] Installing mrpass..."
+
+if command -v pipx >/dev/null 2>&1; then
+    pipx install --force .
+    echo "[✓] Installed via pipx. Run: mrpass -h"
+    exit 0
 fi
 
-echo "[+] Installing mrpass system-wide..."
+VENV="$HOME/.local/share/mrpass-venv"
+BIN_DIR="$HOME/.local/bin"
 
-# 1. Install required Python packages globally from requirements.txt
-if [ -f "requirements.txt" ]; then
-  echo "[+] Installing Python dependencies..."
-  pip3 install -r requirements.txt --quiet
-else
-  echo "[!] requirements.txt not found! Installing default dependencies..."
-  pip3 install requests phonenumbers --quiet
-fi
+python3 -m venv "$VENV"
+"$VENV/bin/pip" install --quiet --upgrade pip
+"$VENV/bin/pip" install --quiet .
 
-# 2. Copy the main script to /usr/local/bin/mrpass and make it executable
-if [ -f "mrpass.py" ]; then
-  cp mrpass.py /usr/local/bin/mrpass
-  chmod +x /usr/local/bin/mrpass
-  echo "[+] Success! 'mrpass' has been installed globally."
-  echo "[+] You can now run it anywhere by typing: mrpass"
-else
-  echo "[-] Error: mrpass.py not found in the current directory!"
-  exit 1
-fi
+mkdir -p "$BIN_DIR"
+ln -sf "$VENV/bin/mrpass" "$BIN_DIR/mrpass"
+
+echo "[✓] Installed to $VENV and linked as $BIN_DIR/mrpass"
+
+case ":$PATH:" in
+    *":$BIN_DIR:"*) ;;
+    *)
+        echo "[!] $BIN_DIR is not in your PATH. Add it with:"
+        echo "      echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc && source ~/.bashrc"
+        ;;
+esac
+
+echo "[✓] Run: mrpass -h"
