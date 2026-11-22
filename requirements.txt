@@ -1,2 +1,2 @@
-requests
-phonenumbers
+requests>=2.31
+phonenumbers>=8.13
