@@ -17,6 +17,7 @@ import subprocess
 import sys
 import unittest
 from contextlib import redirect_stdout
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -147,8 +148,10 @@ class TestGenerator(unittest.TestCase):
         self.assertTrue(all(p in mrpass.EFF_WORDS for p in parts))
 
     def test_passphrase_capitalize(self):
-        phrase = mrpass.generate_passphrase(4, capitalize=True)
-        self.assertTrue(all(w[0].isupper() for w in phrase.split("-")))
+        # EFF includes "yo-yo", so splitting on '-' is ambiguous.
+        with patch("mrpass.secrets.choice", side_effect=["yo-yo", "apple"]):
+            phrase = mrpass.generate_passphrase(2, separator=".", capitalize=True)
+        self.assertEqual(phrase, "Yo-yo.Apple")
 
     def test_passphrase_errors(self):
         with self.assertRaises(ValueError):
